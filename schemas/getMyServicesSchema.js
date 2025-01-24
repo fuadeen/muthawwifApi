@@ -1,3 +1,5 @@
+const ServiceType = require('../enums/serviceType')
+
 const getMyServicesSchema = {
   schema: {
     description: 'Get services belonging to the logged-in user',
@@ -50,7 +52,7 @@ const getMyServicesSchema = {
                 service_type: {
                   type: 'string',
                   description: 'Type of service',
-                  enum: ['umrah', 'city_tour', 'umrah_city_tour'],
+                  enum: Object.values(ServiceType),
                   example: 'umrah',
                 },
               },

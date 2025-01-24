@@ -1,3 +1,5 @@
+const ServiceType = require('../enums/serviceType')
+
 const muthawwifListSchema = {
   schema: {
     description: 'Fetch the list of Muthawwif services with optional filters.',
@@ -28,7 +30,7 @@ const muthawwifListSchema = {
         },
         service_type: {
           type: 'string',
-          enum: ['umrah', 'city_tour', 'umrah_city_tour'],
+          enum: Object.values(ServiceType),
           description: 'Filter by specific service type',
           example: 'umrah',
         },

@@ -1,3 +1,5 @@
+const ServiceType = require('../enums/serviceType')
+
 const editMuthawwifServiceSchema = {
   schema: {
     description: 'Edit a specific Muthawwif service by ID',
@@ -29,7 +31,7 @@ const editMuthawwifServiceSchema = {
         service_type: {
           type: 'string',
           description: 'Updated type of service',
-          enum: ['umrah', 'city_tour', 'umrah_city_tour'],
+          enum: Object.values(ServiceType),
           example: 'umrah',
         },
       },
