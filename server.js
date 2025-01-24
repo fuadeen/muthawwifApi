@@ -99,6 +99,9 @@ fastify.register(require('./routes/delAvailability'), {
 fastify.register(require('./routes/bookingService'), {
   prefix: '/api/service',
 })
+fastify.register(require('./routes/cancelBooking'), {
+  prefix: '/api/service',
+})
 fastify.register(require('./routes/myBookings'), {
   prefix: '/api/service',
 })

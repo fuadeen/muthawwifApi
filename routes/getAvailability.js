@@ -26,7 +26,7 @@ module.exports = async function (fastify, opts) {
 
         // Build the query
         let query =
-          'SELECT available_date, is_booked FROM muthawwif_availability WHERE user_id = ?'
+          'SELECT id, available_date, is_booked FROM muthawwif_availability WHERE user_id = ?'
         const params = [userId]
 
         if (startDate) {
@@ -45,17 +45,19 @@ module.exports = async function (fastify, opts) {
         // Structure the response
         const availableDates = rows
           .filter((row) => !row.is_booked)
-          .map((row) => row.available_date)
+          .map((row) => ({ id: row.id, date: row.available_date }))
         const bookedDates = rows
           .filter((row) => row.is_booked)
-          .map((row) => row.available_date)
+          .map((row) => ({ id: row.id, date: row.available_date }))
 
-        reply.send({
+        // Send the response
+        return reply.send({
           availableDates,
           bookedDates,
         })
       } catch (error) {
-        reply
+        // Handle errors and ensure only one response is sent
+        return reply
           .status(500)
           .send({ error: 'Failed to fetch availability', details: error })
       }

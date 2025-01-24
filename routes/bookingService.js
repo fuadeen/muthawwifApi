@@ -93,9 +93,9 @@ module.exports = async function (fastify, opts) {
         )
         const bookingId = bookingResult.insertId
 
-        // Insert entries into the `booking_details` table
+        // Insert entries into the `booking_details` table with `booking_status`
         const bookingDetailsPlaceholders = validAvailabilityIds
-          .map(() => '(?, ?, ?, ?, ?)')
+          .map(() => '(?, ?, ?, ?, ?, ?)')
           .join(', ')
         const bookingDetailsParams = validAvailabilityIds.flatMap((id) => [
           bookingId,
@@ -103,9 +103,10 @@ module.exports = async function (fastify, opts) {
           id,
           serviceType,
           dailyRate,
+          'pending', // Set booking_status to 'pending'
         ])
         await connection.query(
-          `INSERT INTO booking_details (booking_id, service_id, availability_id, service_type, daily_rate) 
+          `INSERT INTO booking_details (booking_id, service_id, availability_id, service_type, daily_rate, booking_status) 
            VALUES ${bookingDetailsPlaceholders}`,
           bookingDetailsParams
         )

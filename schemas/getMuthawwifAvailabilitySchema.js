@@ -27,12 +27,24 @@ const getMuthawwifAvailabilitySchema = {
         properties: {
           availableDates: {
             type: 'array',
-            items: { type: 'string', format: 'date', example: '2025-01-01' },
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'number', example: 1 },
+                date: { type: 'string', format: 'date', example: '2025-01-01' },
+              },
+            },
             description: 'Dates that are available for booking',
           },
           bookedDates: {
             type: 'array',
-            items: { type: 'string', format: 'date', example: '2025-01-02' },
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'number', example: 2 },
+                date: { type: 'string', format: 'date', example: '2025-01-02' },
+              },
+            },
             description: 'Dates that are already booked',
           },
         },
