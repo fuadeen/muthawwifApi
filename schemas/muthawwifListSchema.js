@@ -1,9 +1,7 @@
 const muthawwifListSchema = {
   schema: {
-    description:
-      'Fetch the list of Muthawwif services along with their availability, bio, and experience',
+    description: 'Fetch the list of Muthawwif services with optional filters.',
     tags: ['Muthawwif Services'],
-    // security: [{ BearerAuth: [] }],
     querystring: {
       type: 'object',
       properties: {
@@ -20,13 +18,31 @@ const muthawwifListSchema = {
         sort: {
           type: 'string',
           enum: ['name', 'rate'],
-          description: 'Sort by name or rate',
+          description: 'Sort by name or daily rate',
           example: 'name',
         },
         nationality: {
           type: 'string',
           description: 'Filter by nationality',
           example: 'American',
+        },
+        service_type: {
+          type: 'string',
+          enum: ['umrah', 'city_tour', 'umrah_city_tour'],
+          description: 'Filter by specific service type',
+          example: 'umrah',
+        },
+        startDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Filter availability starting from this date',
+          example: '2025-01-01',
+        },
+        endDate: {
+          type: 'string',
+          format: 'date',
+          description: 'Filter availability up to this date',
+          example: '2025-01-10',
         },
       },
       required: [],
@@ -41,37 +57,20 @@ const muthawwifListSchema = {
             items: {
               type: 'object',
               properties: {
-                user_id: { type: 'integer', example: 8 },
+                user_id: { type: 'integer', example: 1 },
                 full_name: { type: 'string', example: 'John Doe' },
                 nationality: { type: 'string', example: 'American' },
-                photo_url: {
-                  type: 'string',
-                  format: 'url',
-                  example: 'https://example.com/john.jpg',
-                },
-                bio: {
-                  type: 'string',
-                  description: 'Short biography of the Muthawwif',
-                  example:
-                    'Experienced guide with over 10 years of service in Makkah and Madinah.',
-                },
-                experience: {
-                  type: 'integer',
-                  description: 'Years of experience',
-                  example: 10,
-                },
+                photo_url: { type: 'string', format: 'url', example: '...' },
+                bio: { type: 'string', example: 'Experienced Muthawwif' },
+                experience: { type: 'integer', example: 10 },
                 services: {
                   type: 'array',
                   items: {
                     type: 'object',
                     properties: {
-                      service_id: { type: 'integer', example: 1 },
-                      service_type: {
-                        type: 'string',
-                        enum: ['umrah', 'city_tour', 'umrah_city_tour'],
-                        example: 'umrah',
-                      },
-                      daily_rate: { type: 'string', example: '150.50' },
+                      service_id: { type: 'integer', example: 2 },
+                      service_type: { type: 'string', example: 'umrah' },
+                      daily_rate: { type: 'string', example: '150.00' },
                       city: { type: 'string', example: 'Makkah' },
                     },
                   },
@@ -85,7 +84,7 @@ const muthawwifListSchema = {
                       availability_date: {
                         type: 'string',
                         format: 'date',
-                        example: '2025-01-26',
+                        example: '2025-01-01',
                       },
                     },
                   },
@@ -93,27 +92,17 @@ const muthawwifListSchema = {
               },
             },
           },
-          totalEntries: { type: 'integer', example: 1 },
+          totalEntries: { type: 'integer', example: 10 },
           currentPage: { type: 'integer', example: 1 },
-          totalPages: { type: 'integer', example: 1 },
-        },
-      },
-      401: {
-        description: 'Unauthorized request',
-        type: 'object',
-        properties: {
-          error: { type: 'string', example: 'Unauthorized' },
+          totalPages: { type: 'integer', example: 2 },
         },
       },
       500: {
         description: 'Internal server error',
         type: 'object',
         properties: {
-          error: {
-            type: 'string',
-            example: 'Failed to fetch Muthawwif services',
-          },
-          details: { type: 'string', example: 'Database connection error' },
+          error: { type: 'string', example: 'Failed to fetch data' },
+          details: { type: 'string', example: 'Error details' },
         },
       },
     },

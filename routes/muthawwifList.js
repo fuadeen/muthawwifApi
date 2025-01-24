@@ -1,5 +1,4 @@
 const db = require('../db')
-const verifyToken = require('../middlewares/authMiddleware') // Middleware to verify token
 const muthawwifListSchema = require('../schemas/muthawwifListSchema')
 
 module.exports = async function (fastify, opts) {
@@ -7,39 +6,82 @@ module.exports = async function (fastify, opts) {
     '/muthawwif-services',
     { ...muthawwifListSchema },
     async (request, reply) => {
-      const { page = 1, limit = 10, sort = 'name', nationality } = request.query
+      const {
+        page = 1,
+        limit = 10,
+        sort = 'name',
+        nationality,
+        service_type,
+        startDate,
+        endDate,
+      } = request.query
       const offset = (page - 1) * limit
 
       try {
-        // Base condition for nationality filter
-        const nationalityFilter = nationality ? `AND u.nationality = ?` : ``
+        // Base condition for filters
+        const filters = []
+        const params = []
 
-        const nationalityParams = nationality ? [nationality] : []
+        if (nationality) {
+          filters.push('u.nationality = ?')
+          params.push(nationality)
+        }
 
-        // Fetch Muthawwif users with their availabilities
+        if (service_type) {
+          filters.push('ms.service_type = ?')
+          params.push(service_type)
+        }
+
+        let dateFilter = ''
+        if (startDate && endDate) {
+          dateFilter = `
+            AND ma.user_id IN (
+              SELECT user_id
+              FROM muthawwif_availability
+              WHERE available_date BETWEEN ? AND ?
+              AND is_booked = FALSE
+              GROUP BY user_id
+              HAVING COUNT(DISTINCT available_date) = DATEDIFF(?, ?) + 1
+            )
+          `
+          params.push(startDate, endDate, endDate, startDate)
+        } else if (startDate) {
+          dateFilter = `
+            AND ma.user_id IN (
+              SELECT user_id
+              FROM muthawwif_availability
+              WHERE available_date = ?
+              AND is_booked = FALSE
+            )
+          `
+          params.push(startDate)
+        }
+
+        // Main query to fetch Muthawwif users with their services and availabilities
         const queryMuthawwifUsers = `
           SELECT 
             u.id AS user_id, 
             u.full_name, 
             u.nationality, 
-            u.photo_url,
-            u.bio, -- Muthawwif bio
-            u.experience -- Muthawwif experience
+            u.photo_url, 
+            u.bio,
+            u.experience
           FROM user u
-          INNER JOIN muthawwif_availability ma 
-            ON ma.user_id = u.id AND ma.is_booked = FALSE
+          INNER JOIN muthawwif_service ms ON ms.user_id = u.id
+          INNER JOIN muthawwif_availability ma ON ma.user_id = u.id AND ma.is_booked = FALSE
           WHERE u.type = 'muthawwif'
-          ${nationalityFilter}
+          ${filters.length ? 'AND ' + filters.join(' AND ') : ''}
+          ${dateFilter}
           GROUP BY u.id
-          ORDER BY ${sort === 'rate' ? 'u.full_name' : 'u.full_name'} ASC
+          ORDER BY ${sort === 'rate' ? 'ms.daily_rate' : 'u.full_name'} ASC
           LIMIT ? OFFSET ?
         `
-        const params = [...nationalityParams, parseInt(limit), parseInt(offset)]
+        params.push(parseInt(limit), parseInt(offset))
+
         const [muthawwifRows] = await db.query(queryMuthawwifUsers, params)
 
-        // Get user IDs from the fetched rows
-        const userIds = muthawwifRows.map((row) => row.user_id)
-        if (userIds.length === 0) {
+        // If no users found, return an empty response
+        if (muthawwifRows.length === 0) {
           return reply.send({
             data: [],
             totalEntries: 0,
@@ -49,6 +91,7 @@ module.exports = async function (fastify, opts) {
         }
 
         // Fetch services for the Muthawwif users
+        const userIds = muthawwifRows.map((row) => row.user_id)
         const queryServices = `
           SELECT 
             ms.user_id, 
@@ -68,7 +111,7 @@ module.exports = async function (fastify, opts) {
             ma.id AS availability_id, 
             DATE(ma.available_date) AS availability_date
           FROM muthawwif_availability ma
-          WHERE ma.user_id IN (${userIds.map(() => '?').join(', ')}) 
+          WHERE ma.user_id IN (${userIds.map(() => '?').join(', ')})
           AND ma.is_booked = FALSE
         `
         const [availabilityRows] = await db.query(queryAvailabilities, userIds)
@@ -93,28 +136,29 @@ module.exports = async function (fastify, opts) {
             }))
 
           return {
-            user_id: muthawwif.user_id,
+            user_id: userId,
             full_name: muthawwif.full_name,
             nationality: muthawwif.nationality,
             photo_url: muthawwif.photo_url,
-            bio: muthawwif.bio, // Include bio
-            experience: muthawwif.experience, // Include experience
+            bio: muthawwif.bio,
+            experience: muthawwif.experience,
             services,
             availabilities,
           }
         })
 
-        // Count total entries for pagination (only Muthawwif users with availabilities)
+        // Count total entries for pagination
         const countQuery = `
           SELECT COUNT(DISTINCT u.id) AS totalEntries
           FROM user u
-          INNER JOIN muthawwif_availability ma 
-            ON ma.user_id = u.id AND ma.is_booked = FALSE
+          INNER JOIN muthawwif_service ms ON ms.user_id = u.id
+          INNER JOIN muthawwif_availability ma ON ma.user_id = u.id AND ma.is_booked = FALSE
           WHERE u.type = 'muthawwif'
-          ${nationalityFilter}
+          ${filters.length ? 'AND ' + filters.join(' AND ') : ''}
+          ${dateFilter}
         `
-        const [countResult] = await db.query(countQuery, nationalityParams)
-        const totalEntries = countResult[0].totalEntries
+        const [countResult] = await db.query(countQuery, params.slice(0, -2)) // Remove pagination params
+        const totalEntries = countResult[0]?.totalEntries || 0
 
         reply.send({
           data,
