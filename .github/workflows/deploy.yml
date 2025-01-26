@@ -10,22 +10,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository code
+      # Checkout the code
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Set up SSH to connect to the VPS
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      # Build and deploy the Docker container on the VPS
-      - name: Deploy to VPS
+      # Install sshpass
+      - name: Install sshpass
         run: |
-          ssh root@92.242.187.114 <<EOF
-            cd /root/backend/muthawwif
-            git pull origin develop
-            docker-compose down
-            docker-compose up --build -d
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+
+      # Deploy to VPS
+      - name: Deploy to VPS
+        env:
+          SSH_USER: ${{ secrets.VPS_USER }}
+          SSH_HOST: ${{ secrets.VPS_HOST }}
+          SSH_PASS: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
+          cd /home/backend/muthawwif
+          git pull origin develop
+          docker-compose down
+          docker-compose up --build -d
           EOF
