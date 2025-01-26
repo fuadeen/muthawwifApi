@@ -4,7 +4,7 @@ FROM node:18
 # Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
+# Copy only the package files first for dependency installation
 COPY package*.json ./
 
 # Install dependencies
@@ -16,5 +16,5 @@ COPY . .
 # Expose the application port
 EXPOSE 3000
 
-# Start the Node.js application
+# Start the application
 CMD ["node", "server.js"]
