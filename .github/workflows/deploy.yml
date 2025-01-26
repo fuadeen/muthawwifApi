@@ -26,14 +26,37 @@ jobs:
           SSH_USER: ${{ secrets.VPS_USER }}
           SSH_HOST: ${{ secrets.VPS_HOST }}
           SSH_PASS: ${{ secrets.VPS_PASSWORD }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          SENDGRID_EMAIL_SENDER: ${{ secrets.SENDGRID_EMAIL_SENDER }}
+
         run: |
           sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
+          # Create or navigate to the backend directory
           mkdir -p ~/backend/muthawwif
           cd ~/backend/muthawwif
+
+          # Clone the repository if it doesn't exist, or pull the latest changes
           if [ ! -d .git ]; then
-          git clone https://github.com/fuadeen/muthawwifApi.git .
+            git clone https://github.com/fuadeen/muthawwifApi.git .
           fi
           git pull origin develop
+
+          # Generate the .env file from GitHub Secrets
+          cat <<EOT > .env
+          DB_HOST=${DB_HOST}
+          DB_PORT=${DB_PORT}
+          DB_USER=${DB_USER}
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_NAME=${DB_NAME}
+          EOT
+
+          # Restart the Docker container
           docker-compose down
           docker-compose up --build -d
           EOF
