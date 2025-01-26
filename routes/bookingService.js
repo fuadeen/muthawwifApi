@@ -1,6 +1,7 @@
 const db = require('../db') // Assuming db is configured using mysql2
 const verifyToken = require('../middlewares/authMiddleware') // Middleware to verify token
 const createBookingSchema = require('../schemas/createBookingSchema')
+const { sendBookingConfirmationEmail } = require('../utils/sendEmailCustomer') // Import the email function
 
 module.exports = async function (fastify, opts) {
   fastify.post(
@@ -13,15 +14,12 @@ module.exports = async function (fastify, opts) {
       let connection
 
       try {
-        // Get a connection for transaction
         connection = await db.getConnection()
-
-        // Start transaction
         await connection.beginTransaction()
 
-        // Validate user type
+        // Validate user type and get full_name
         const [userResult] = await connection.query(
-          'SELECT type FROM user WHERE id = ?',
+          'SELECT type, email_address AS email, full_name FROM user WHERE id = ?',
           [userId]
         )
         const user = userResult[0]
@@ -31,7 +29,13 @@ module.exports = async function (fastify, opts) {
           )
         }
 
-        // Fetch muthawwif's user_id and daily_rate for the given service_id
+        const customerEmail = user.email
+        const customerName = user.full_name || 'Customer' // Fallback to "Customer" if full_name is NULL
+        if (!customerEmail) {
+          throw new Error('Customer email is missing or invalid.')
+        }
+
+        // Fetch muthawwif details
         const [serviceResult] = await connection.query(
           'SELECT user_id, daily_rate, service_type FROM muthawwif_service WHERE id = ? FOR UPDATE',
           [service_id]
@@ -44,6 +48,12 @@ module.exports = async function (fastify, opts) {
           daily_rate: dailyRate,
           service_type: serviceType,
         } = serviceResult[0]
+
+        const [muthawwifResult] = await connection.query(
+          'SELECT email_address AS email, full_name AS name, mobile_number AS mobile FROM user WHERE id = ?',
+          [muthawwifUserId]
+        )
+        const muthawwif = muthawwifResult[0]
 
         // Validate availability_ids
         const placeholders = availability_ids.map(() => '?').join(', ')
@@ -59,33 +69,21 @@ module.exports = async function (fastify, opts) {
         )
         const validAvailabilityIds = validAvailability.map((row) => row.id)
 
-        // Check for invalid availability_ids
-        const invalidAvailabilityIds = availability_ids.filter(
-          (id) => !validAvailabilityIds.includes(id)
-        )
-        if (invalidAvailabilityIds.length > 0) {
-          throw new Error(
-            'Invalid availability_ids: Some dates are either booked or not associated with the selected service'
+        if (validAvailabilityIds.length === 0) {
+          console.warn(
+            'All requested dates are already booked:',
+            availabilityResults
           )
+          return reply.status(200).send({
+            message:
+              'All requested dates were already booked, but no booking was created.',
+            availabilityResults,
+          })
         }
 
-        // Ensure no duplicate booking
-        const [existingBookingCheck] = await connection.query(
-          `SELECT EXISTS (
-            SELECT 1 
-            FROM booking_details 
-            WHERE service_id = ? AND availability_id IN (${placeholders})
-          ) AS existsCheck`,
-          [service_id, ...validAvailabilityIds]
-        )
-        if (existingBookingCheck[0].existsCheck) {
-          throw new Error('Duplicate booking detected for selected dates')
-        }
-
-        // Calculate total amount
         const totalAmount = dailyRate * validAvailabilityIds.length
 
-        // Insert a single booking entry into the main `booking` table
+        // Create booking entry
         const [bookingResult] = await connection.query(
           `INSERT INTO booking (user_id, booking_status, number_companion, total_amount) 
            VALUES (?, ?, ?, ?)`,
@@ -93,7 +91,7 @@ module.exports = async function (fastify, opts) {
         )
         const bookingId = bookingResult.insertId
 
-        // Insert entries into the `booking_details` table with `booking_status`
+        // Insert booking details
         const bookingDetailsPlaceholders = validAvailabilityIds
           .map(() => '(?, ?, ?, ?, ?, ?)')
           .join(', ')
@@ -103,7 +101,7 @@ module.exports = async function (fastify, opts) {
           id,
           serviceType,
           dailyRate,
-          'pending', // Set booking_status to 'pending'
+          'pending',
         ])
         await connection.query(
           `INSERT INTO booking_details (booking_id, service_id, availability_id, service_type, daily_rate, booking_status) 
@@ -111,30 +109,44 @@ module.exports = async function (fastify, opts) {
           bookingDetailsParams
         )
 
-        // Update `is_booked` for the availability table
+        // Update availability
         await connection.query(
           `UPDATE muthawwif_availability SET is_booked = TRUE WHERE id IN (${placeholders})`,
           validAvailabilityIds
         )
 
-        // Commit transaction
         await connection.commit()
 
-        // Prepare response with booking dates
-        const bookingDates = validAvailability.map((row) => row.available_date)
+        // Prepare email details
+        const bookingDates = validAvailability.map(
+          (row) => new Date(row.available_date).toDateString() // Convert to "Wed Jan 22 2025"
+        )
+
+        // Call the separate email function
+        await sendBookingConfirmationEmail({
+          customerEmail,
+          customerName,
+          serviceType,
+          muthawwifName: muthawwif.name,
+          muthawwifEmail: muthawwif.email,
+          muthawwifMobile: muthawwif.mobile,
+          totalAmount,
+          bookingDates,
+        })
+
         return reply.send({
-          message: 'Booking created successfully',
+          message: 'Booking created successfully and email sent',
           totalBookings: validAvailabilityIds.length,
           bookingDates,
         })
       } catch (error) {
-        if (connection) await connection.rollback() // Rollback transaction on error
+        if (connection) await connection.rollback()
         console.error('Error:', error)
         return reply
           .status(500)
           .send({ error: error.message || 'Failed to create booking' })
       } finally {
-        if (connection) connection.release() // Release the connection back to the pool
+        if (connection) connection.release()
       }
     }
   )
