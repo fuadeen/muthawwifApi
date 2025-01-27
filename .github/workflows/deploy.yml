@@ -45,11 +45,11 @@ jobs:
 
           # Reset the repository and clean untracked files
           if [ ! -d .git ]; then
-              git clone https://github.com/fuadeen/muthawwifApi.git .
+            git clone https://github.com/fuadeen/muthawwifApi.git .
           else
-              git reset --hard origin/develop
-              git clean -fd
-              git pull origin develop
+            git reset --hard origin/develop
+            git clean -fd
+            git pull origin develop
           fi
 
           # Generate .env only if it doesn't exist
