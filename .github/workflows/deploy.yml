@@ -54,18 +54,18 @@ jobs:
 
           # Generate .env only if it doesn't exist
           if [ ! -f .env ]; then
-              cat <<EOT > .env
-              DB_HOST=${DB_HOST}
-              DB_PORT=${DB_PORT}
-              DB_USER=${DB_USER}
-              DB_PASSWORD=${DB_PASSWORD}
-              DB_NAME=${DB_NAME}
-              JWT_SECRET=${JWT_SECRET}
-              SENDGRID_API_KEY=${SENDGRID_API_KEY}
-              SENDGRID_EMAIL_SENDER=${SENDGRID_EMAIL_SENDER}
-              SERVER_HOST=${SERVER_HOST}
-              SERVER_PORT=${SERVER_PORT}
-              EOT
+            cat <<EOT > .env
+            DB_HOST=${DB_HOST}
+            DB_PORT=${DB_PORT}
+            DB_USER=${DB_USER}
+            DB_PASSWORD=${DB_PASSWORD}
+            DB_NAME=${DB_NAME}
+            JWT_SECRET=${JWT_SECRET}
+            SENDGRID_API_KEY=${SENDGRID_API_KEY}
+            SENDGRID_EMAIL_SENDER=${SENDGRID_EMAIL_SENDER}
+            SERVER_HOST=${SERVER_HOST}
+            SERVER_PORT=${SERVER_PORT}
+            EOT
           fi
 
           # Restart Docker containers
