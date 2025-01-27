@@ -20,27 +20,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y sshpass
 
-      # Debug secrets
-      - name: Debug Secrets
-        env:
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          SENDGRID_EMAIL_SENDER: ${{ secrets.SENDGRID_EMAIL_SENDER }}
-        run: |
-          echo "DB_HOST=${DB_HOST}"
-          echo "DB_PORT=${DB_PORT}"
-          echo "DB_USER=${DB_USER}"
-          echo "DB_PASSWORD=${DB_PASSWORD}"
-          echo "DB_NAME=${DB_NAME}"
-          echo "JWT_SECRET=${JWT_SECRET}"
-          echo "SENDGRID_API_KEY=${SENDGRID_API_KEY}"
-          echo "SENDGRID_EMAIL_SENDER=${SENDGRID_EMAIL_SENDER}"
-
       # Deploy to VPS
       - name: Deploy to VPS
         env:
