@@ -34,6 +34,9 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           SENDGRID_EMAIL_SENDER: ${{ secrets.SENDGRID_EMAIL_SENDER }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+
         run: |
           sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << EOF
           mkdir -p ~/backend/muthawwif
@@ -53,6 +56,8 @@ jobs:
           JWT_SECRET=${JWT_SECRET}
           SENDGRID_API_KEY=${SENDGRID_API_KEY}
           SENDGRID_EMAIL_SENDER=${SENDGRID_EMAIL_SENDER}
+          SERVER_HOST=${SERVER_HOST}
+          SERVER_PORT=${SERVER_PORT}
           EOT
 
           docker-compose down
