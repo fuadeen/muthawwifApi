@@ -30,12 +30,14 @@ fastify.register(fastifyCors, {
 // Middleware for Authentication
 fastify.decorate('authMiddleware', require('./middlewares/authMiddleware'))
 
+// Determine Swagger host and scheme dynamically
 const SWAGGER_HOST =
   process.env.NODE_ENV === 'production' ? process.env.SWAGGER_HOST : 'localhost'
-const SWAGGER_PORT =
+const SWAGGER_SCHEME = process.env.NODE_ENV === 'production' ? 'https' : 'http'
+const SWAGGER_BASE_URL =
   process.env.NODE_ENV === 'production'
-    ? ''
-    : `:${process.env.SWAGGER_PORT || 5000}`
+    ? SWAGGER_HOST // No port in production
+    : `${SWAGGER_HOST}:${process.env.SERVER_PORT || 5000}`
 
 // Register Swagger
 fastify.register(swagger, {
@@ -45,8 +47,8 @@ fastify.register(swagger, {
       description: 'API documentation for Muthawwif Service backend',
       version: '1.0.0',
     },
-    host: `${SWAGGER_HOST}${SWAGGER_PORT}`,
-    schemes: [process.env.NODE_ENV === 'production' ? 'https' : 'http'],
+    host: SWAGGER_BASE_URL,
+    schemes: [SWAGGER_SCHEME],
     consumes: ['application/json'],
     produces: ['application/json'],
     securityDefinitions: {
