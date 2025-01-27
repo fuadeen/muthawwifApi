@@ -48,13 +48,13 @@ jobs:
           git pull origin develop
 
           # Generate the .env file from GitHub Secrets
-          cat <<EOT > .env
-          DB_HOST=${DB_HOST}
-          DB_PORT=${DB_PORT}
-          DB_USER=${DB_USER}
-          DB_PASSWORD=${DB_PASSWORD}
-          DB_NAME=${DB_NAME}
-          EOT
+          # cat <<EOT > .env
+          # DB_HOST=${DB_HOST}
+          # DB_PORT=${DB_PORT}
+          # DB_USER=${DB_USER}
+          # DB_PASSWORD=${DB_PASSWORD}
+          # DB_NAME=${DB_NAME}
+          # EOT
 
           # Restart the Docker container
           docker-compose down
