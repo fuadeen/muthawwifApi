@@ -127,9 +127,15 @@ cron.schedule('0 */1 * * *', async () => {
 // Start Server
 const start = async () => {
   try {
-    await fastify.listen({ port: 5000 })
-    console.log('🚀 Server running on http://localhost:5000')
-    console.log('Swagger documentation available at http://localhost:5000/docs')
+    const HOST = process.env.SERVER_HOST || '127.0.0.1' // Default to 0.0.0.0 if HOST is not set
+    const PORT = process.env.SERVER_PORT || 3000 // Default to 5000 if PORT is not set
+
+    await fastify.listen({ port: PORT, host: HOST })
+
+    console.log(`🚀 Server running on http://${HOST}:${PORT}`)
+    console.log(
+      `Swagger documentation available at http://${HOST}:${PORT}/docs`
+    )
   } catch (err) {
     fastify.log.error(err)
     process.exit(1)
