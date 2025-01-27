@@ -30,6 +30,11 @@ fastify.register(fastifyCors, {
 // Middleware for Authentication
 fastify.decorate('authMiddleware', require('./middlewares/authMiddleware'))
 
+const HOST =
+  process.env.NODE_ENV === 'production' ? process.env.SERVER_HOST : 'localhost'
+const PORT =
+  process.env.NODE_ENV === 'production' ? process.env.SERVER_PORT : 5000
+
 // Register Swagger
 fastify.register(swagger, {
   swagger: {
@@ -38,8 +43,8 @@ fastify.register(swagger, {
       description: 'API documentation for Muthawwif Service backend',
       version: '1.0.0',
     },
-    host: 'localhost:5000',
-    schemes: ['http'],
+    host: `${HOST}:${PORT}`,
+    schemes: [process.env.NODE_ENV === 'production' ? 'https' : 'http'],
     consumes: ['application/json'],
     produces: ['application/json'],
     securityDefinitions: {
@@ -127,8 +132,8 @@ cron.schedule('0 */1 * * *', async () => {
 // Start Server
 const start = async () => {
   try {
-    const HOST = process.env.SERVER_HOST || '0.0.0.0' // Default to 0.0.0.0 if HOST is not set
-    const PORT = process.env.SERVER_PORT || 3000 // Default to 5000 if PORT is not set
+    //const HOST = process.env.SERVER_HOST || '0.0.0.0' // Default to 0.0.0.0 if HOST is not set
+    //const PORT = process.env.SERVER_PORT || 3000 // Default to 5000 if PORT is not set
 
     await fastify.listen({ port: PORT, host: HOST })
 
