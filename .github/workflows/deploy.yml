@@ -49,12 +49,15 @@ jobs:
 
           # Generate the .env file from GitHub Secrets
           # cat <<EOT > .env
-          # DB_HOST=${DB_HOST}
-          # DB_PORT=${DB_PORT}
-          # DB_USER=${DB_USER}
-          # DB_PASSWORD=${DB_PASSWORD}
-          # DB_NAME=${DB_NAME}
-          # EOT
+          DB_HOST=${DB_HOST}
+          DB_PORT=${DB_PORT}
+          DB_USER=${DB_USER}
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_NAME=${DB_NAME}
+          JWT_SECRET=${JWT_SECRET}
+          SENDGRID_API_KEY=${SENDGRID_API_KEY}
+          SENDGRID_EMAIL_SENDER=${SENDGRID_EMAIL_SENDER}
+          EOT
 
           # Restart the Docker container
           docker-compose down
