@@ -1,12 +1,45 @@
 version: '3.8'
+
+networks:
+  muthawwif_network:
+    driver: bridge
+
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_container
+    restart: always
+    ports:
+      - '3306:3306' # Expose MySQL port
+    environment:
+      MYSQL_ROOT_PASSWORD: SuBh4nAll4h@99 # MySQL root password
+      MYSQL_DATABASE: muthawwif_db # Default database
+      MYSQL_USER: muthawwif # Non-root user
+      MYSQL_PASSWORD: B15mill4h@99 # Non-root user's password
+    volumes:
+      - mysql_data:/var/lib/mysql # Persist database data
+    networks:
+      - muthawwif_network
+
   backend:
     image: node-backend:latest
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '3000:3000'
+      - '3000:3000' # Expose backend API port
     environment:
       NODE_ENV: production
-    restart: always
+      DB_HOST: mysql_container # Reference MySQL container by name
+      DB_PORT: 3306
+      DB_USER: muthawwif
+      DB_PASSWORD: B15mill4h@99
+      DB_NAME: muthawwif_db
+    depends_on:
+      - mysql # Ensure MySQL starts before the backend
+    networks:
+      - muthawwif_network
+
+volumes:
+  mysql_data:
+    driver: local
