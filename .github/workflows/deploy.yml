@@ -63,6 +63,10 @@ jobs:
           SERVER_PORT=${SERVER_PORT}
           EOT
 
-          docker-compose down
+          # Stop and remove any existing containers explicitly
+          docker-compose down || true
+          docker ps -aq | xargs docker rm -f || true
+
+          # Start services
           docker-compose up --build -d
           EOF
