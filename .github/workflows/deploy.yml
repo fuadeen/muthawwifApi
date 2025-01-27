@@ -48,7 +48,7 @@ jobs:
           git pull origin develop
 
           # Generate the .env file from GitHub Secrets
-          # cat <<EOT > .env
+          cat <<EOT > .env
           DB_HOST=${DB_HOST}
           DB_PORT=${DB_PORT}
           DB_USER=${DB_USER}
